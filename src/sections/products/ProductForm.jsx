@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PRODUCT_CATEGORIES } from './categories'
 
 export function ProductForm({ initialData = {}, onSubmit }) {
   const [name, setName] = useState(initialData.name || '')
@@ -39,7 +40,17 @@ export function ProductForm({ initialData = {}, onSubmit }) {
 
       <label>
         Categoría
-        <input value={category} onChange={e => setCategory(e.target.value)} />
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option key="0" value="">Sin categoría</option>
+          {PRODUCT_CATEGORIES.map(cat => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
       </label>
 
       <button type="submit">Guardar</button>
