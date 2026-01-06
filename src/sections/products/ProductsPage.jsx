@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PRODUCT_CATEGORIES } from './categories'
+//electron
+import { buildProductsTicketHtml } from '@/modules/tickets/application/buildProductsTicketHtml'
 //db
 import { DexieProductRepository } from '@/modules/products/infrastructure/DexieProductRepository'
 //crud
@@ -29,6 +31,11 @@ export function ProductsPage() {
   useEffect(() => {
     load()
   }, [])
+
+  function printProductsPdf() {
+    const html = buildProductsTicketHtml(products)
+    window.electron.printHtmlToPdf(html)
+  }
 
   async function activeProduct(product) {
     product.active = true
@@ -104,10 +111,8 @@ export function ProductsPage() {
     load()
   }
 
-
   //filters
   const filteredProducts = products
-    //.filter(p => p.active !== false) //by switch banned
     .filter(product => {
       if (!showInactive) return product.active !== false
       return true
@@ -121,6 +126,7 @@ export function ProductsPage() {
 
       return matchesCategory && matchesSearch
   })
+
 
   return (
     <div>
@@ -146,14 +152,15 @@ export function ProductsPage() {
         </select>
 
         <button onClick={openCreate}>+ Nuevo producto</button>
-          <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-        <input
-          type="checkbox"
-          checked={showInactive}
-          onChange={e => setShowInactive(e.target.checked)}
-        />
-        Mostrar inactivos
-      </label>
+
+        <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={e => setShowInactive(e.target.checked)}
+          />
+          Mostrar inactivos
+        </label>
       </div>
 
       {filteredProducts.length ? filteredProducts.map(product => (
@@ -166,6 +173,11 @@ export function ProductsPage() {
           onActive={() => activeProduct(product)}
         />
       )): "🧩 Ningun elemento aún..."}
+
+      <button onClick={printProductsPdf}>
+        Exportar todos los productos (PDF)
+      </button>
+
     </div>
   )
 }
