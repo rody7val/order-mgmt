@@ -1,7 +1,8 @@
-export function ProductCard({ product, onEdit, onDelete }) {
+export function ProductCard({ product, onEdit, onDelete, onBan, onActive }) {
   return (
     <div
       style={{
+        background: `${product.active ? "#fff" : "#ddd"}`,
         border: '1px solid #ddd',
         padding: '8px',
         borderRadius: '4px',
@@ -19,7 +20,13 @@ export function ProductCard({ product, onEdit, onDelete }) {
 
       <div style={{ display: 'flex', gap: '6px' }}>
         <button onClick={onEdit}>Editar</button>
-        <button onClick={onDelete}>Eliminar</button>
+        {product.active ? 
+          <button onClick={onBan}>Quitar</button>
+         : <div>
+            <button onClick={onActive}>Activar</button>
+            <button onClick={onDelete}>Eliminar</button>
+          </div>
+        }
       </div>
     </div>
   )

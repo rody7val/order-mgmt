@@ -17,7 +17,8 @@ export function updateProduct(productRepository) {
       name: data.name,
       price: data.price,
       category: data.category,
-      active: data.active ?? true
+      active: data.active,
+      updatedAt: Date.now()
     })
   }
 }

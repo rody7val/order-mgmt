@@ -11,10 +11,12 @@ import { updateProduct } from '@/modules/products/application/update/updateProdu
 import { ProductForm } from '@/sections/products/ProductForm'
 import { ProductCard } from '@/sections/products/ProductCard'
 import { useModal } from '@/sections/modal/ModalContext'
+import { ConfirmModal } from '@/sections/modal/ConfirmModal'
 
 const repo = new DexieProductRepository()
 
 export function ProductsPage() {
+  const [showInactive, setShowInactive] = useState(false)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [products, setProducts] = useState([])
@@ -27,6 +29,13 @@ export function ProductsPage() {
   useEffect(() => {
     load()
   }, [])
+
+  async function activeProduct(product) {
+    product.active = true
+    product.updatedAt = Date.now()
+    await repo.update(product)
+    load()
+  }
 
   function openCreate() {
     openModal(
@@ -57,29 +66,69 @@ export function ProductsPage() {
     )
   }
 
+  function confirmDelete(product) {
+    openModal(
+      <ConfirmModal
+        title='Eliminar producto'
+        message={`Eliminar ${product.name}?`}
+        onCancel={closeModal}
+        onConfirm={async () => {
+          await remove(product.id)
+          closeModal()
+        }}
+      />
+    )
+  }
+  
+    function confirmBan(product) {
+    openModal(
+      <ConfirmModal
+        title='Quitar producto'
+        message={`Quitar  ${product.name}?`}
+        onCancel={closeModal}
+        onConfirm={async () => {
+          product.active = false
+          await ban(product)
+          closeModal()
+        }}
+      />
+    )
+  }
+
   async function remove(id) {
     await deleteProduct(repo)(id)
     load()
   }
+  async function ban(product) {
+    await updateProduct(repo)(product)
+    load()
+  }
+
 
   //filters
-  const filteredProducts = products.filter(product => {
-    const matchesCategory =
-      !categoryFilter || product.category === categoryFilter
+  const filteredProducts = products
+    //.filter(p => p.active !== false) //by switch banned
+    .filter(product => {
+      if (!showInactive) return product.active !== false
+      return true
+    })
+    .filter(p => { //by category
+      const matchesCategory =
+        !categoryFilter || p.category === categoryFilter
 
-    const matchesSearch =
-      product.name.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch =
+        p.name.toLowerCase().includes(search.toLowerCase())
 
-    return matchesCategory && matchesSearch
+      return matchesCategory && matchesSearch
   })
 
   return (
     <div>
-      <h2>Productos</h2>
+      <h2>🏪 Productos</h2>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <input
-          placeholder="Buscar producto..."
+          placeholder="🔍 Buscar producto..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -97,24 +146,26 @@ export function ProductsPage() {
         </select>
 
         <button onClick={openCreate}>+ Nuevo producto</button>
+          <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <input
+          type="checkbox"
+          checked={showInactive}
+          onChange={e => setShowInactive(e.target.checked)}
+        />
+        Mostrar inactivos
+      </label>
       </div>
 
-      {filteredProducts.map(product => (
+      {filteredProducts.length ? filteredProducts.map(product => (
         <ProductCard
           key={product.id}
           product={product}
           onEdit={() => openEdit(product)}
-          onDelete={() => remove(product.id)}
+          onDelete={() => confirmDelete(product)}
+          onBan={() => confirmBan(product)}
+          onActive={() => activeProduct(product)}
         />
-      ))}
-
-      {/*products.map(p => (
-        <div key={p.id}>
-          {p.name} - ${p.price} {p.category}
-          <button onClick={() => openEdit(p)}>Editar</button>  
-          <button onClick={() => remove(p.id)}>Eliminar</button>
-        </div>
-      ))*/}
+      )): "🧩 Ningun elemento aún..."}
     </div>
   )
 }

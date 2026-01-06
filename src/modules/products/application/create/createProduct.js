@@ -12,7 +12,9 @@ export function createProduct(productRepository) {
       name: data.name.trim(),
       price: data.price,
       category: data.category ?? '',
-      active: true
+      active: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     })
   }
 }
