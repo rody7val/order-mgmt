@@ -11,11 +11,9 @@ export function ProductCard({ product, onEdit, onDelete, onBan, onActive }) {
         alignItems: 'center'
       }}
     >
-      <div>
-        <strong>{product.name}</strong>
-        <div style={{ fontSize: '0.9em', color: '#666' }}>
-          {product.category || 'Sin categoría'} · ${product.price}
-        </div>
+      <div style={{display: "contents"}}>
+        <span>{product.name}</span>
+        <span>${product.price}</span>
       </div>
 
       <div style={{ display: 'flex', gap: '6px' }}>

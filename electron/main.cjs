@@ -30,7 +30,7 @@ function registerIpc() {
 
       const templatePath = path.join(
         __dirname,
-        '../src/sections/tickets/templates/ticket.html'
+        '../src/modules/tickets/templates/ticket.html'
       )
 
       const template = fs.readFileSync(templatePath, 'utf8')
@@ -45,10 +45,11 @@ function registerIpc() {
       const pdf = await win.webContents.printToPDF({
         margins: { top: 0, bottom: 0, left: 0, right: 0 }
       })
-      
-      const outputPath = path.join(process.cwd(), 'productos-2.pdf')
-      console.log("--"+outputPath)
 
+      let now = Date.now()
+      let pathName = new Date(now).toLocaleString().split(", ")[0].replaceAll("/", "-")
+      const outputPath = path.join(app.getAppPath('temp'), `files/${pathName}-productos-${now}.pdf`)
+      
       fs.writeFileSync(outputPath, pdf)
 
       win.close()

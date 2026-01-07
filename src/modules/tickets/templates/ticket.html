@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @page {
+        size: 58mm auto;
+        margin: 0;
+      }
+      body {
+        font-family: monospace;
+        font-size: 28px;
+        margin: 0;
+        padding: 45px;
+        margin: 0 auto;
+        max-width: 700px;
+        width: auto;
+        line-height: 1.4;
+      }
+      .header {
+        text-align: center;
+      }
+      .footer {
+        margin-top: 10px;
+        text-align: center;
+      }
+      .ticket {
+        width: 100%;
+      }
+      .category {
+        margin-top: 10px;
+        font-weight: bold;
+        border-bottom: 1px dashed #000;
+      }
+      .item {
+        display: flex;
+        justify-content: space-between;
+      }
+      .item-name {
+        word-wrap: break-word;
+      }
+      .item-price {
+        text-align: right;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    {{CONTENT}}
+  </body>
+</html>

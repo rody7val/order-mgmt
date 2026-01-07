@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PRODUCT_CATEGORIES } from './categories'
+import { groupAndSortProducts } from '@/modules/products/application/groupAndSortProducts'
 //electron
-import { generatePdfFromProducts } from '@/modules/tickets/application/generatePdf'
+import { generateTicket } from '@/modules/tickets/application/generateTicket'
 //db
 import { DexieProductRepository } from '@/modules/products/infrastructure/DexieProductRepository'
 //crud
@@ -15,7 +16,6 @@ import { ProductCard } from '@/sections/products/ProductCard'
 
 import { useModal } from '@/sections/modal/ModalContext'
 import { ConfirmModal } from '@/sections/modal/ConfirmModal'
-import { PdfPreviewModal } from './PdfPreviewModal'
 
 const repo = new DexieProductRepository()
 
@@ -25,8 +25,6 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [products, setProducts] = useState([])
   const { openModal, closeModal } = useModal()
-  //tickets notifications
-  const [pdfInfo, setPdfInfo] = useState(null)
 
   async function load() {
     setProducts(await getAllProducts(repo)())
@@ -37,7 +35,7 @@ export function ProductsPage() {
   }, [])
 
   async function printProductsPdf(items) {
-    const html = generatePdfFromProducts(items)
+    const html = generateTicket(items)
     return window.electron.printHtmlToPdf(html)
   }
   
@@ -108,35 +106,9 @@ export function ProductsPage() {
     )
   }
 
-  function confirmExportPdf() {
-    openModal(
-      <ConfirmModal
-        key={Date.now()}
-        title='¿Generar PDF?'
-        message='Se creará un archivo con los productos actuales'
-        onCancel={closeModal}
-        onConfirm={async () => {
-          await printProductsPdf(filteredProducts)
-          closeModal()
-        }}
-      />
-    )
-  }
-  
   async function openViewPdf() {
     let result = await printProductsPdf(filteredProducts)
     await window.electron.previewPdf(result.path)
-  /*console.log(result.path)
-    openModal(
-      <PdfPreviewModal
-        key={Date.now()}
-        path={result.path}
-        onClose={() => {
-          closeModal()
-        }}
-      />,
-      'Vista PDF'
-    )*/
   }
 
   async function remove(id) {
@@ -164,6 +136,7 @@ export function ProductsPage() {
       return matchesCategory && matchesSearch
   })
 
+  const groupedProducts = groupAndSortProducts(filteredProducts)
 
   return (
     <div>
@@ -200,7 +173,12 @@ export function ProductsPage() {
         </label>
       </div>
 
-      {filteredProducts.length ? filteredProducts.map(product => (
+{Object.entries(groupedProducts).map(([category, products]) => (
+  <div key={category} className="category-group">
+    <h3 className="category-title">{category}</h3>
+
+    <div className="products-grid">
+      {products.map(product => (
         <ProductCard
           key={product.id}
           product={product}
@@ -209,14 +187,25 @@ export function ProductsPage() {
           onBan={() => confirmBan(product)}
           onActive={() => activeProduct(product)}
         />
-      )): "🧩 Ningun elemento aún..."}
+      ))}
+    </div>
+  </div>
+))}
+
+      {/*filteredProducts.length ? filteredProducts.map(product => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          onEdit={() => openEdit(product)}
+          onDelete={() => confirmDelete(product)}
+          onBan={() => confirmBan(product)}
+          onActive={() => activeProduct(product)}
+        />
+      )): "🧩 Ningun elemento aún..."*/}
 
       <br/>
-      <button onClick={confirmExportPdf}>
-        ⬇️ Exportar a PDF
-      </button>
       <button onClick={openViewPdf}>
-        👀 Vista impresión
+        👀 Ver / Imprimir catálogo
       </button>
 
     </div>
