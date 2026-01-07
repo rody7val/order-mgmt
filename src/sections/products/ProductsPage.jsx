@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PRODUCT_CATEGORIES } from './categories'
 //electron
-import { buildProductsTicketHtml } from '@/modules/tickets/application/buildProductsTicketHtml'
+import { generatePdfFromProducts } from '@/modules/tickets/application/generatePdf'
 //db
 import { DexieProductRepository } from '@/modules/products/infrastructure/DexieProductRepository'
 //crud
@@ -12,8 +12,10 @@ import { updateProduct } from '@/modules/products/application/update/updateProdu
 //components
 import { ProductForm } from '@/sections/products/ProductForm'
 import { ProductCard } from '@/sections/products/ProductCard'
+
 import { useModal } from '@/sections/modal/ModalContext'
 import { ConfirmModal } from '@/sections/modal/ConfirmModal'
+import { PdfPreviewModal } from './PdfPreviewModal'
 
 const repo = new DexieProductRepository()
 
@@ -23,6 +25,8 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [products, setProducts] = useState([])
   const { openModal, closeModal } = useModal()
+  //tickets notifications
+  const [pdfInfo, setPdfInfo] = useState(null)
 
   async function load() {
     setProducts(await getAllProducts(repo)())
@@ -32,22 +36,22 @@ export function ProductsPage() {
     load()
   }, [])
 
-  function printProductsPdf() {
-    const html = buildProductsTicketHtml(products)
-    window.electron.printHtmlToPdf(html)
+  async function printProductsPdf(items) {
+    const html = generatePdfFromProducts(items)
+    return window.electron.printHtmlToPdf(html)
   }
-
+  
   async function activeProduct(product) {
     product.active = true
     product.updatedAt = Date.now()
     await repo.update(product)
     load()
   }
-
+  
   function openCreate() {
     openModal(
       <ProductForm
-        key='new'
+        key={Date.now()}
         onSubmit={async data => {
           await createProduct(repo)(data)
           closeModal()
@@ -76,6 +80,7 @@ export function ProductsPage() {
   function confirmDelete(product) {
     openModal(
       <ConfirmModal
+        key={product.id}
         title='Eliminar producto'
         message={`Eliminar ${product.name}?`}
         onCancel={closeModal}
@@ -86,10 +91,11 @@ export function ProductsPage() {
       />
     )
   }
-  
-    function confirmBan(product) {
+
+  function confirmBan(product) {
     openModal(
       <ConfirmModal
+        key={product.id}
         title='Quitar producto'
         message={`Quitar  ${product.name}?`}
         onCancel={closeModal}
@@ -100,6 +106,37 @@ export function ProductsPage() {
         }}
       />
     )
+  }
+
+  function confirmExportPdf() {
+    openModal(
+      <ConfirmModal
+        key={Date.now()}
+        title='¿Generar PDF?'
+        message='Se creará un archivo con los productos actuales'
+        onCancel={closeModal}
+        onConfirm={async () => {
+          await printProductsPdf(filteredProducts)
+          closeModal()
+        }}
+      />
+    )
+  }
+  
+  async function openViewPdf() {
+    let result = await printProductsPdf(filteredProducts)
+    await window.electron.previewPdf(result.path)
+  /*console.log(result.path)
+    openModal(
+      <PdfPreviewModal
+        key={Date.now()}
+        path={result.path}
+        onClose={() => {
+          closeModal()
+        }}
+      />,
+      'Vista PDF'
+    )*/
   }
 
   async function remove(id) {
@@ -130,7 +167,7 @@ export function ProductsPage() {
 
   return (
     <div>
-      <h2>🏪 Productos</h2>
+      <h2>🛒 Productos </h2>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <input
@@ -143,7 +180,7 @@ export function ProductsPage() {
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
         >
-          <option value="">Todas</option>
+          <option value="">☰ Todas</option>
           {PRODUCT_CATEGORIES.map(cat => (
             <option key={cat} value={cat}>
               {cat}
@@ -174,8 +211,12 @@ export function ProductsPage() {
         />
       )): "🧩 Ningun elemento aún..."}
 
-      <button onClick={printProductsPdf}>
-        Exportar todos los productos (PDF)
+      <br/>
+      <button onClick={confirmExportPdf}>
+        ⬇️ Exportar a PDF
+      </button>
+      <button onClick={openViewPdf}>
+        👀 Vista impresión
       </button>
 
     </div>

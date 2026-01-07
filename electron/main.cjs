@@ -3,7 +3,6 @@ const fs = require('fs')
 const path = require('path')
 
 let win
-console.log('DEV URL:', process.env.VITE_DEV_SERVER_URL)
 
 function createWindow() {
   win = new BrowserWindow({
@@ -14,24 +13,24 @@ function createWindow() {
       contextIsolation: true
     }
   })
-
   win.webContents.openDevTools()
-
+  
+  //load server
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL)
-  } else {
+  } else {//or file
     win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 }
 
 function registerIpc() {
-  ipcMain.on('print-html-to-pdf', async (_event, htmlContent) => {
+  ipcMain.handle('print-html-to-pdf', async (_event, htmlContent) => {
     try {
       const win = new BrowserWindow({ show: false })
 
       const templatePath = path.join(
         __dirname,
-        '../src/modules/tickets/templates/ticket.html'
+        '../src/sections/tickets/templates/ticket.html'
       )
 
       const template = fs.readFileSync(templatePath, 'utf8')
@@ -47,18 +46,39 @@ function registerIpc() {
         margins: { top: 0, bottom: 0, left: 0, right: 0 }
       })
       
-      const outputPath = path.join(process.cwd(), 'productos.pdf')
-      console.log(outputPath)
+      const outputPath = path.join(process.cwd(), 'productos-2.pdf')
+      console.log("--"+outputPath)
+
       fs.writeFileSync(outputPath, pdf)
 
       win.close()
+
+      return {//catch path needs to preview and download
+        path: outputPath, 
+        createdAt: Date.now()
+      }
     } catch (err) {
       console.error('PDF error:', err)
     }
   })
 }
 
+function registerView() {
+  ipcMain.handle('preview-pdf', async (_e, pdfPath) => {
+    const previewWin = new BrowserWindow({
+      width: 420,
+      height: 600,
+      webPreferences: {
+        plugins: true
+      }
+    })
+
+    await previewWin.loadURL(`file://${pdfPath}`)
+  })
+}
+
 app.whenReady().then(() => {
-  createWindow()
   registerIpc()
+  registerView()
+  createWindow()
 })
