@@ -1,12 +1,12 @@
 export const PRODUCT_CATEGORIES = [
-  "🍕 Pizzas",
-  "🥟 Empanadas",
-  "🧃 Bebidas",
-  "🥪 Sándwichs",
-  "🍔 Hamburguesas",
-  "🍛 Platos",
   "🥫 Almacen",
-  "🍮 Postres",
+  "🧃 Bebidas",
+  "🥟 Empanadas",
+  "🍔 Hamburguesas",
+  "🍕 Pizzas",
+  "🍛 Platos",
   "⚖️ Porción x peso",
-  "🍟 Porción x unidad"
+  "🍟 Porción x unidad",
+  "🍮 Postres",
+  "🥪 Sándwichs",
 ]

@@ -16,7 +16,6 @@ export function ModalProvider({ children }) {
 
   return (
     <ModalContext.Provider value={{ openModal, closeModal }}>
-      {children}
       <Modal
         open={!!modal}
         title={modal?.title}
@@ -24,6 +23,7 @@ export function ModalProvider({ children }) {
       >
         {modal?.content}
       </Modal>
+      {!modal ? children : null}
     </ModalContext.Provider>
   )
 }

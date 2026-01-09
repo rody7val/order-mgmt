@@ -1,38 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useProducts } from '@/sections/products/hooks/useProducts'
+import { useProductFilters } from '@/sections/products/hooks/useProductFilters'
 import { PRODUCT_CATEGORIES } from './categories'
-import { groupAndSortProducts } from '@/modules/products/application/groupAndSortProducts'
+import { groupAndSortProducts } from '@/modules/products/app/groupAndSort/groupAndSortProducts'
+
 //electron
-import { generateTicket } from '@/modules/tickets/application/generateTicket'
+import { generateTicket } from '@/modules/tickets/app/generateTicket'
 //db
 import { DexieProductRepository } from '@/modules/products/infrastructure/DexieProductRepository'
 //crud
-import { getAllProducts } from '@/modules/products/application/getAll/getAllProducts'
-import { createProduct } from '@/modules/products/application/create/createProduct'
-import { deleteProduct } from '@/modules/products/application/delete/deleteProduct'
-import { updateProduct } from '@/modules/products/application/update/updateProduct'
+import { createProduct } from '@/modules/products/app/create/createProduct'
+import { deleteProduct } from '@/modules/products/app/delete/deleteProduct'
+import { updateProduct } from '@/modules/products/app/update/updateProduct'
 //components
 import { ProductForm } from '@/sections/products/ProductForm'
 import { ProductCard } from '@/sections/products/ProductCard'
 
+import { OrderButton } from '@/sections/orders/OrderButton'
 import { useModal } from '@/sections/modal/ModalContext'
 import { ConfirmModal } from '@/sections/modal/ConfirmModal'
+
+import { addItemToOrder } from '@/modules/orders/app/current/addItemToOrder'
 
 const repo = new DexieProductRepository()
 
 export function ProductsPage() {
-  const [showInactive, setShowInactive] = useState(false)
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [products, setProducts] = useState([])
+  const { products, reload } = useProducts(repo)
+  const filters = useProductFilters(products)
   const { openModal, closeModal } = useModal()
-
-  async function load() {
-    setProducts(await getAllProducts(repo)())
-  }
-
-  useEffect(() => {
-    load()
-  }, [])
 
   async function printProductsPdf(items) {
     const html = generateTicket(items)
@@ -43,7 +37,7 @@ export function ProductsPage() {
     product.active = true
     product.updatedAt = Date.now()
     await repo.update(product)
-    load()
+    reload()
   }
   
   function openCreate() {
@@ -53,7 +47,7 @@ export function ProductsPage() {
         onSubmit={async data => {
           await createProduct(repo)(data)
           closeModal()
-          load()
+          reload()
         }}
       />,
       'Nuevo producto'
@@ -68,7 +62,7 @@ export function ProductsPage() {
         onSubmit={async data => {
           await updateProduct(repo)(data)
           closeModal()
-          load()
+          reload()
         }}
       />,
       'Editar producto'
@@ -105,53 +99,50 @@ export function ProductsPage() {
       />
     )
   }
+  
+  function openOrderModal() {
+    openModal(<p>PI</p>)
+  }
 
+  // order
+  async function addProduct (p) {
+    return await addItemToOrder(p)
+  }
+
+  // pdf
   async function openViewPdf() {
-    let result = await printProductsPdf(filteredProducts)
+    let result = await printProductsPdf(filters.filtered)
     await window.electron.previewPdf(result.path)
   }
 
   async function remove(id) {
     await deleteProduct(repo)(id)
-    load()
+    reload()
   }
   async function ban(product) {
     await updateProduct(repo)(product)
-    load()
+    reload()
   }
 
-  //filters
-  const filteredProducts = products
-    .filter(product => {
-      if (!showInactive) return product.active !== false
-      return true
-    })
-    .filter(p => { //by category
-      const matchesCategory =
-        !categoryFilter || p.category === categoryFilter
-
-      const matchesSearch =
-        p.name.toLowerCase().includes(search.toLowerCase())
-
-      return matchesCategory && matchesSearch
-  })
-
-  const groupedProducts = groupAndSortProducts(filteredProducts)
+  const groupedProducts = groupAndSortProducts(filters.filtered)
 
   return (
     <div>
-      <h2>🛒 Productos </h2>
-
+      <h2>🛍️ Productos </h2>
+      <OrderButton
+        openOrder={openOrderModal}
+      >
+      </OrderButton>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <input
           placeholder="🔍 Buscar producto..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          value={filters.search}
+          onChange={e => filters.setSearch(e.target.value)}
         />
 
         <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
+          value={filters.categoryFilter}
+          onChange={e => filters.setCategory(e.target.value)}
         >
           <option value="">☰ Todas</option>
           {PRODUCT_CATEGORIES.map(cat => (
@@ -166,42 +157,32 @@ export function ProductsPage() {
         <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
           <input
             type="checkbox"
-            checked={showInactive}
-            onChange={e => setShowInactive(e.target.checked)}
+            checked={filters.showInactive}
+            onChange={e => filters.setShowInactive(e.target.checked)}
           />
           Mostrar inactivos
         </label>
       </div>
 
-{Object.entries(groupedProducts).map(([category, products]) => (
-  <div key={category} className="category-group">
-    <h3 className="category-title">{category}</h3>
+      {filters.filtered.length ? Object.entries(groupedProducts).map(([category, ps]) => (
+        <div key={category} className="category-group">
+          <h3 className="category-title">{category}</h3>
 
-    <div className="products-grid">
-      {products.map(product => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          onEdit={() => openEdit(product)}
-          onDelete={() => confirmDelete(product)}
-          onBan={() => confirmBan(product)}
-          onActive={() => activeProduct(product)}
-        />
-      ))}
-    </div>
-  </div>
-))}
-
-      {/*filteredProducts.length ? filteredProducts.map(product => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          onEdit={() => openEdit(product)}
-          onDelete={() => confirmDelete(product)}
-          onBan={() => confirmBan(product)}
-          onActive={() => activeProduct(product)}
-        />
-      )): "🧩 Ningun elemento aún..."*/}
+          <div className="ps-grid">
+            {ps.map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onEdit={() => openEdit(product)}
+                onDelete={() => confirmDelete(product)}
+                onBan={() => confirmBan(product)}
+                onActive={() => activeProduct(product)}
+                onAdd={() => addProduct(product)}
+              />
+            ))}
+          </div>
+        </div>
+      )): "🧩 Ningun elemento aún..."}
 
       <br/>
       <button onClick={openViewPdf}>

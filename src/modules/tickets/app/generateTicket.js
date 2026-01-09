@@ -1,5 +1,5 @@
 import { formatDate } from '@/shared/date'
-import { groupAndSortProducts } from '@/modules/products/application/groupAndSortProducts'
+import { groupAndSortProducts } from '@/modules/products/app/groupAndSortProducts'
 
 export function generateTicket(products) {
   const grouped = groupAndSortProducts(products)
