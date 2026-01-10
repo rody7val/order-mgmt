@@ -11,11 +11,12 @@ import { addItemToOrder } from '@/modules/orders/app/current/addItemToOrder'
 import { useProducts } from '@/sections/products/hooks/useProducts'
 import { useProductFilters } from '@/sections/products/hooks/useProductFilters'
 import { useProductActions } from '@/sections/products/hooks/useProductActions'
-import { PRODUCT_CATEGORIES } from './categories'
-import { OrderButton } from '@/sections/orders/OrderButton'
 import { useModal } from '@/sections/modal/ModalContext'
 //component
 import { ProductCard } from '@/sections/products/ProductCard'
+import { ProductToolbar } from '@/sections/products/ProductToolbar'
+import { OrderButton } from '@/sections/orders/OrderButton'
+
 
 export function ProductsPage() {
   const repo = useMemo(() => new DexieProductRepository(), [])
@@ -24,8 +25,10 @@ export function ProductsPage() {
   const { products, reload } = useProducts(repo)
   const filters = useProductFilters(products)
   const actions = useProductActions(repo, reload, modal)
-  
-  
+
+  //const pdf = useProductPdf
+  const grouped = groupAndSortProducts(filters.filtered)
+
   async function printProductsPdf(items) {
     const html = generateTicket(items)
     return window.electron.printHtmlToPdf(html)
@@ -47,47 +50,14 @@ export function ProductsPage() {
     await window.electron.previewPdf(result.path)
   }
 
-  const groupedProducts = groupAndSortProducts(filters.filtered)
-
   return (
     <div>
       <h2>🛍️ Productos </h2>
-      <OrderButton
-        openOrder={openOrderModal}
-      >
-      </OrderButton>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-        <input
-          placeholder="🔍 Buscar producto..."
-          value={filters.search}
-          onChange={e => filters.setSearch(e.target.value)}
-        />
+      <OrderButton openOrder={openOrderModal}></OrderButton>
 
-        <select
-          value={filters.categoryFilter}
-          onChange={e => filters.setCategory(e.target.value)}
-        >
-          <option value="">☰ Todas</option>
-          {PRODUCT_CATEGORIES.map(cat => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+      <ProductToolbar {...filters} onCreate={actions.openCreate} />
 
-        <button onClick={actions.openCreate}>+ Nuevo producto</button>
-
-        <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={filters.showInactive}
-            onChange={e => filters.setShowInactive(e.target.checked)}
-          />
-          Mostrar inactivos
-        </label>
-      </div>
-
-      {filters.filtered.length ? Object.entries(groupedProducts).map(([category, _products]) => (
+      {filters.filtered.length ? Object.entries(grouped).map(([category, _products]) => (
         <div key={category} className="category-group">
           <h3 className="category-title">{category}</h3>
 
@@ -107,8 +77,8 @@ export function ProductsPage() {
           </div>
         </div>
       )): "🧩 Ningun elemento aún..."}
-
-      <br/>
+      
+      <br />
       <button onClick={openViewPdf}>
         👀 Ver / Imprimir catálogo
       </button>
