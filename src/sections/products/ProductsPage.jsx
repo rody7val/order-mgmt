@@ -1,107 +1,39 @@
-import { useProducts } from '@/sections/products/hooks/useProducts'
-import { useProductFilters } from '@/sections/products/hooks/useProductFilters'
-import { PRODUCT_CATEGORIES } from './categories'
-import { groupAndSortProducts } from '@/modules/products/app/groupAndSort/groupAndSortProducts'
-
-//electron
-import { generateTicket } from '@/modules/tickets/app/generateTicket'
+import { useMemo } from 'react';
 //db
 import { DexieProductRepository } from '@/modules/products/infrastructure/DexieProductRepository'
-//crud
-import { createProduct } from '@/modules/products/app/create/createProduct'
-import { deleteProduct } from '@/modules/products/app/delete/deleteProduct'
-import { updateProduct } from '@/modules/products/app/update/updateProduct'
-//components
-import { ProductForm } from '@/sections/products/ProductForm'
-import { ProductCard } from '@/sections/products/ProductCard'
-
+//group & sort
+import { groupAndSortProducts } from '@/modules/products/app/groupAndSort/groupAndSortProducts'
+//electron pdf
+import { generateTicket } from '@/modules/tickets/app/generateTicket'
+//order-item
+import { addItemToOrder } from '@/modules/orders/app/current/addItemToOrder'
+//hooks
+import { useProducts } from '@/sections/products/hooks/useProducts'
+import { useProductFilters } from '@/sections/products/hooks/useProductFilters'
+import { useProductActions } from '@/sections/products/hooks/useProductActions'
+import { PRODUCT_CATEGORIES } from './categories'
 import { OrderButton } from '@/sections/orders/OrderButton'
 import { useModal } from '@/sections/modal/ModalContext'
-import { ConfirmModal } from '@/sections/modal/ConfirmModal'
-
-import { addItemToOrder } from '@/modules/orders/app/current/addItemToOrder'
-
-const repo = new DexieProductRepository()
+//component
+import { ProductCard } from '@/sections/products/ProductCard'
 
 export function ProductsPage() {
+  const repo = useMemo(() => new DexieProductRepository(), [])
+  const modal = useModal()
+
   const { products, reload } = useProducts(repo)
   const filters = useProductFilters(products)
-  const { openModal, closeModal } = useModal()
-
+  const actions = useProductActions(repo, reload, modal)
+  
+  
   async function printProductsPdf(items) {
     const html = generateTicket(items)
     return window.electron.printHtmlToPdf(html)
   }
-  
-  async function activeProduct(product) {
-    product.active = true
-    product.updatedAt = Date.now()
-    await repo.update(product)
-    reload()
-  }
-  
-  function openCreate() {
-    openModal(
-      <ProductForm
-        key={Date.now()}
-        onSubmit={async data => {
-          await createProduct(repo)(data)
-          closeModal()
-          reload()
-        }}
-      />,
-      'Nuevo producto'
-    )
-  }
 
-  function openEdit(product) {
-    openModal(
-      <ProductForm
-        key={product?.id || 'new'}
-        initialData={product}
-        onSubmit={async data => {
-          await updateProduct(repo)(data)
-          closeModal()
-          reload()
-        }}
-      />,
-      'Editar producto'
-    )
-  }
-
-  function confirmDelete(product) {
-    openModal(
-      <ConfirmModal
-        key={product.id}
-        title='Eliminar producto'
-        message={`Eliminar ${product.name}?`}
-        onCancel={closeModal}
-        onConfirm={async () => {
-          await remove(product.id)
-          closeModal()
-        }}
-      />
-    )
-  }
-
-  function confirmBan(product) {
-    openModal(
-      <ConfirmModal
-        key={product.id}
-        title='Quitar producto'
-        message={`Quitar  ${product.name}?`}
-        onCancel={closeModal}
-        onConfirm={async () => {
-          product.active = false
-          await ban(product)
-          closeModal()
-        }}
-      />
-    )
-  }
-  
   function openOrderModal() {
-    openModal(<p>PI</p>)
+    //openModal(<p>PI</p>)
+    console.log("openOrderModal")
   }
 
   // order
@@ -113,15 +45,6 @@ export function ProductsPage() {
   async function openViewPdf() {
     let result = await printProductsPdf(filters.filtered)
     await window.electron.previewPdf(result.path)
-  }
-
-  async function remove(id) {
-    await deleteProduct(repo)(id)
-    reload()
-  }
-  async function ban(product) {
-    await updateProduct(repo)(product)
-    reload()
   }
 
   const groupedProducts = groupAndSortProducts(filters.filtered)
@@ -152,7 +75,7 @@ export function ProductsPage() {
           ))}
         </select>
 
-        <button onClick={openCreate}>+ Nuevo producto</button>
+        <button onClick={actions.openCreate}>+ Nuevo producto</button>
 
         <label style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
           <input
@@ -164,20 +87,21 @@ export function ProductsPage() {
         </label>
       </div>
 
-      {filters.filtered.length ? Object.entries(groupedProducts).map(([category, ps]) => (
+      {filters.filtered.length ? Object.entries(groupedProducts).map(([category, _products]) => (
         <div key={category} className="category-group">
           <h3 className="category-title">{category}</h3>
 
           <div className="ps-grid">
-            {ps.map(product => (
+            {_products.map(p => (
               <ProductCard
-                key={product.id}
-                product={product}
-                onEdit={() => openEdit(product)}
-                onDelete={() => confirmDelete(product)}
-                onBan={() => confirmBan(product)}
-                onActive={() => activeProduct(product)}
-                onAdd={() => addProduct(product)}
+                key={p.id}
+                product={p}
+                onEdit={() => actions.openEdit(p)}
+                onDelete={() => actions.confirmDelete(p)}
+                onBan={() => actions.confirmBan(p)}
+                onActive={() => actions.activate(p)}
+                //new to order
+                onAdd={() => addProduct(p)}
               />
             ))}
           </div>
