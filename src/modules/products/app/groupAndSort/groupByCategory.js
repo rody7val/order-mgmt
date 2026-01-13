@@ -1,5 +1,5 @@
 export function groupByCategory(products) {
-  return products.reverse().reduce((acc, product) => {
+  return products.reduce((acc, product) => {
     const category = product.category || 'Otros'
 
     if (!acc[category]) {

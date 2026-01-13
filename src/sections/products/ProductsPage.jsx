@@ -22,7 +22,7 @@ export function ProductsPage() {
   const modal = useModal()
 
   const { products, reload } = useProducts(repo)
-  const filters = useProductFilters(products)
+  const filters = useProductFilters(products.reverse())
   const actions = useProductActions(repo, reload, modal)
 
   const pdf = useProductPdf()
@@ -35,8 +35,6 @@ export function ProductsPage() {
 
   return (
     <>
-      <h2>🛍️ Productos </h2>
-
       <ProductToolbar {...filters} onCreate={actions.openCreate} />
       <OrderButton openOrder={openOrderModal} />
 
@@ -46,7 +44,7 @@ export function ProductsPage() {
         {...actions}
       />
 
-      <button onClick={() => pdf.preview(filters.filtered)}>
+      <button onClick={() => pdf.preview(grouped)}>
         👀 Ver / Imprimir catálogo
       </button>
 

@@ -1,4 +1,4 @@
-import { getCurrentOrder } from './currentOrderStore'
+import { getCurrentOrder } from './getCurrentOrder'
 
 export function getActiveItemCount() {
   const order = getCurrentOrder()

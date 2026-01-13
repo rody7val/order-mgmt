@@ -1,9 +1,6 @@
 import { formatDate } from '@/shared/date'
-import { groupAndSortProducts } from '@/modules/products/app/groupAndSortProducts'
 
-export function generateTicket(products) {
-  const grouped = groupAndSortProducts(products)
-
+export function generateTicket(grouped) {
   let html = `
   <div class="ticket">
     <div class="header">${formatDate(Date.now())}</div>

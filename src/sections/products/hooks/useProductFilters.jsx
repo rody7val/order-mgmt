@@ -7,7 +7,9 @@ export function useProductFilters(products) {
 
   const filtered = useMemo(() => {
     return products
+      //by active
       .filter(p => showInactive || p.active !== false)
+      //by category
       .filter(p => {
         const matchesCategory =
           !category || p.category === category

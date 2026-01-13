@@ -13,14 +13,16 @@ function createWindow() {
       contextIsolation: true
     }
   })
-  win.webContents.openDevTools()
   
-  //load server
   if (process.env.VITE_DEV_SERVER_URL) {
+    //load server
     win.loadURL(process.env.VITE_DEV_SERVER_URL)
-  } else {//or file
+  } else {
+    //or file
     win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
+
+  return win.webContents.openDevTools()
 }
 
 function registerIpc() {

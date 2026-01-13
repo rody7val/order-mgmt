@@ -3,10 +3,13 @@ import { PRODUCT_CATEGORIES } from './categories'
 export function ProductToolbar({
   search,
   setSearch,
+
   category,
   setCategory,
+
   showInactive,
   setShowInactive,
+
   onCreate
 }) {
   return (

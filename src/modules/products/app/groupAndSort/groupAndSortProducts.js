@@ -1,11 +1,7 @@
-export function groupAndSortProducts(products) {
-  const grouped = {}
+import { groupByCategory } from './groupByCategory'
 
-  products.reverse().forEach(product => {
-    const category = product.category || 'Otros'
-    if (!grouped[category]) grouped[category] = []
-    grouped[category].push(product)
-  })
+export function groupAndSortProducts(products) {
+  const grouped = groupByCategory(products)
 
   Object.keys(grouped).forEach(category => {
     grouped[category].sort((a, b) =>

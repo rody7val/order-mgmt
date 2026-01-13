@@ -1,5 +1,5 @@
 import { OrderItem } from '@/modules/orders/domain/OrderItem'
-import { getCurrentOrder } from './currentOrderStore'
+import { getCurrentOrder } from './getCurrentOrder'
 import { emit } from '@/shared/eventBus'
 
 export function addItemToOrder(product) {

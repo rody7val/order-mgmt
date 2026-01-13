@@ -1,4 +1,3 @@
-// sections/products/ProductList.jsx
 import { ProductCard } from '@/sections/products/ProductCard'
 
 export function ProductList({
